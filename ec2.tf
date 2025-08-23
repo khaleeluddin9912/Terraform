@@ -1,8 +1,8 @@
 # key pair (login)
 
 resource "aws_key_pair" "deployer" {
-  key_name   = "terraform-key"
-  public_key = file("terraform-key.pub")
+  key_name   = "terraform-key-practice"
+  public_key = file("terraform-key-practice.pub")
 }
 
 # vpc & Security Group
@@ -52,17 +52,26 @@ resource "aws_security_group" "my_security_group" {
 # ec2 instance 
 
 resource "aws_instance" "my_instance" {
+    for_each = tomap({
+        Terra-automate-1 = "t2.micro"
+       # Automate-terra-2 = "t2.micro"
+    })
+
+    depends_on = [ aws_security_group.my_security_group, aws_key_pair.deployer ]
+
     key_name = aws_key_pair.deployer.key_name
     security_groups = [aws_security_group.my_security_group.name]
-    instance_type = var.ec2_instance_type
+    instance_type = each.value
     ami = var.ec2_ami_id
-    user_data = file("install_nginx.sh")
+    #user_data = file("install_nginx.sh")
+
+
 
     root_block_device {
-        volume_size = var.ec2_root_storage_size
+        volume_size = var.env == "prd" ? 18 : var.ec2_default_root_storage_size
         volume_type = "gp3"
     }
     tags = {
-        Name = "MKU-Terrafrom-automate"
+        Name = each.key
     }
 }
